@@ -1,0 +1,64 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "SageMakerCostSaverLambdaAllowList",
+            "Effect": "Allow",
+            "Action": [
+                 "sagemaker:ListApps",
+                 "sagemaker:ListDomains",
+                 "sagemaker:ListEndpoints",
+                 "sagemaker:ListModels",
+                 "sagemaker:ListNotebookInstances",
+                 "sagemaker:ListPipelines",
+                 "sagemaker:ListProcessingJobs",
+                 "sagemaker:ListTags",
+                 "sagemaker:ListTrainingJobs",
+                 "sagemaker:ListUserProfiles"
+            ],
+            "Resource": "*"
+       },
+       {
+        "Sid": "SageMakerCostSaverLambdaAllowDescribe",
+        "Effect": "Allow",
+        "Action": [
+             "sagemaker:DescribeApp",
+             "sagemaker:DescribeDomain",
+             "sagemaker:DescribeEndpoint",
+             "sagemaker:DescribeEndpointConfig",
+             "sagemaker:DescribeModel",
+             "sagemaker:DescribeNotebookInstance",
+             "sagemaker:DescribePipeline",
+             "sagemaker:DescribeProcessingJob",
+             "sagemaker:DescribeTrainingJob",
+             "sagemaker:DescribeUserProfile"
+        ],
+        "Resource": "*"
+   },
+   {
+        "Sid": "SageMakerCostSaverLambdaAllowStopDelete",
+        "Effect": "Allow",
+        "Action": [
+             "sagemaker:DeleteApp",
+             "sagemaker:DeleteEndpoint",
+             "sagemaker:DeleteEndpointConfig",
+             "sagemaker:DeleteNotebookInstance",
+             "sagemaker:StopNotebookInstance",
+             "sagemaker:StopProcessingJob",
+             "sagemaker:StopTrainingJob"
+
+        ],
+        "Resource": "*"
+   },
+   {
+    "Sid": "SageMakerCostSaverLambdaAllowCloudWatch",
+    "Effect": "Allow",
+    "Action": [
+         "logs:CreateLogGroup",
+         "logs:CreateLogStream",
+         "logs:PutLogEvents"
+    ],
+    "Resource": "*"
+    }
+   ]
+ }
