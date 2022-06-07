@@ -238,11 +238,13 @@ def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_KERNEL, 
 # ENVIRONMENT VARIABLES 
 # SAGEMAKER_STUDIO_APP_TYPE : 
 # SAGEMAKER_MODEL_ENDPOINT_DELETE: True | False
+# SAGEMAKER_STUDIO_APP_STOP: True | False
+# SAGEMAKER_NOTEBOOK_INSTANCE_STOP: True | False
 def lambda_handler(event, context):
     logger.debug('Getting OS environment variables.')
 
     envSageMakerStudioAppType = DEFAULT_SAGEMAKER_APP_TYPE_KERNEL    
-    envStopSageMakerModelEndpoint = False
+    envStopSageMakerModelEndpoint = True
     envStopSageMakerStudioApp = True
     envStopSageMakerNotebookInstance = True
 
