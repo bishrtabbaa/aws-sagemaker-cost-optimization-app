@@ -255,17 +255,17 @@ def lambda_handler(event, context):
         logger.warn('Define Lambda Environment Variable: SAGEMAKER_STUDIO_APP_TYPE')
 
     try:
-        envStopSageMakerModelEndpoint = bool(os.environ['SAGEMAKER_MODEL_ENDPOINT_STOP'])
+        envStopSageMakerModelEndpoint = str2bool(os.environ['SAGEMAKER_MODEL_ENDPOINT_STOP'])
     except KeyError:
         logger.warn('Define Lambda Environment Variable: SAGEMAKER_MODEL_ENDPOINT_STOP')
 
     try:
-        envStopSageMakerStudioApp = bool(os.environ['SAGEMAKER_STUDIO_APP_STOP'])
+        envStopSageMakerStudioApp = str2bool(os.environ['SAGEMAKER_STUDIO_APP_STOP'])
     except KeyError:
         logger.warn('Define Lambda Environment Variable: SAGEMAKER_STUDIO_APP_STOP')
 
     try:
-        envStopSageMakerNotebookInstance = bool(os.environ['SAGEMAKER_NOTEBOOK_INSTANCE_STOP'])
+        envStopSageMakerNotebookInstance = str2bool(os.environ['SAGEMAKER_NOTEBOOK_INSTANCE_STOP'])
     except KeyError:
         logger.warn('Define Lambda Environment Variable: SAGEMAKER_NOTEBOOK_INSTANCE_STOP')
 
@@ -279,6 +279,12 @@ def lambda_handler(event, context):
 def log_list(myList):
     for myItem in myList:
         logger.info(myItem)
+
+def str2bool(s):
+    if (s != None):
+        return s.lower() in ("yes", "y", "true", "t", "1")
+    else:
+        return False
 
 ##############################    
 # CLI TEST
