@@ -320,7 +320,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Description: Scheduled EventBridge Rule for Lambda cost optimization function
-      ScheduleExpression: cron(0 22 * * ? *)
+      ScheduleExpression: cron(0 23 * * ? *)
       State: ENABLED
       Targets:
         - Arn: !GetAtt SagemakerCostOptimizationFunction.Arn
