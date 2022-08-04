@@ -41,6 +41,7 @@ import traceback
 DEFAULT_PAGE_SIZE = 100
 DEFAULT_SAGEMAKER_APP_TYPE_KERNEL = "KernelGateway"
 DEFAULT_SAGEMAKER_STATUS_TYPE_ACTIVE = "InService"
+DEFAULT_SAGEMAKER_APP_TYPE_ALL = "*"
 
 # LOGGER
 logger = logging.getLogger()
@@ -121,7 +122,7 @@ def get_sagemaker_studio_apps():
         return smStudioAppResponse['Apps']
     else:
         return None
-def filter_active_sagemaker_studio_apps(smStudioApps, smAppType=DEFAULT_SAGEMAKER_APP_TYPE_KERNEL):
+def filter_active_sagemaker_studio_apps(smStudioApps, smAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL):
 
     smActiveStudioApps = []
 
@@ -129,7 +130,7 @@ def filter_active_sagemaker_studio_apps(smStudioApps, smAppType=DEFAULT_SAGEMAKE
 
     if (smStudioApps is not None):
         for smStudioApp in smStudioApps:
-            if (smStudioApp['AppType'] == smAppType and smStudioApp['Status'] == DEFAULT_SAGEMAKER_STATUS_TYPE_ACTIVE):
+            if ((smAppType == DEFAULT_SAGEMAKER_APP_TYPE_ALL or smStudioApp['AppType'] == smAppType) and smStudioApp['Status'] == DEFAULT_SAGEMAKER_STATUS_TYPE_ACTIVE):
                 smActiveStudioApps.append(smStudioApp)
 
     if (smStudioApps == None or len(smStudioApps) == 0):
@@ -206,7 +207,7 @@ def stop_sagemaker_model_endpoints(smModelEndpoints):
     
     return nResourcesStopped
 
-def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_KERNEL, stopStudioApps=True, stopNotebookInstances=True, stopModelEndpoints=True):
+def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, stopStudioApps=True, stopNotebookInstances=True, stopModelEndpoints=True):
 
     nResourcesStopped = 0
 
@@ -243,7 +244,7 @@ def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_KERNEL, 
 def lambda_handler(event, context):
     logger.debug('Getting OS environment variables.')
 
-    envSageMakerStudioAppType = DEFAULT_SAGEMAKER_APP_TYPE_KERNEL    
+    envSageMakerStudioAppType = DEFAULT_SAGEMAKER_APP_TYPE_ALL    
     envStopSageMakerModelEndpoint = True
     envStopSageMakerStudioApp = True
     envStopSageMakerNotebookInstance = True
@@ -292,10 +293,10 @@ def str2bool(s):
 # python3 aws-sagemaker-cost-optimization-app.py --apptype KernelGateway
 ##############################  
 
-if __name__ == '__main__':
+def main_handler():
     logger.setLevel(logging.INFO)
 
-    mySageMakerAppType = DEFAULT_SAGEMAKER_APP_TYPE_KERNEL
+    mySageMakerAppType = DEFAULT_SAGEMAKER_APP_TYPE_ALL
     nResourcesStopped = 0
 
     args = sys.argv[1:]
@@ -310,3 +311,6 @@ if __name__ == '__main__':
     nResourcesStopped = stop_sagemaker_resources(mySageMakerAppType,True,True,True)
 
     # TODO .. training, tuning, processing, and batch transform jobs ... for now ignore them
+
+if __name__ == '__main__':
+    main_handler()
