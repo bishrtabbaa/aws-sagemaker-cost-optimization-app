@@ -39,7 +39,7 @@ Stopped SageMaker Resources: 0
 
 ### Deploy Serverless app to AWS as CloudFormation stack
 
-Use deployment parameter values for the `region`, `IpamUsageThreshold`, `IpamSnsSubject`, and `IpamSnsTopic` that are appropriate for your environment and use case. It is likely that this solution will reside where you already setup IPAM for your AWS Organization in the management (parent) account.
+The default parameter values of the CloudFormation stack will result in stopping SageMaker Apps, Notebooks, and Endpoints on a weekly basis which is the common case to prevent cost overruns.  You can change the Lambda function configuration at deployment time and also once the stack has been deployed.
 ```
 aws cloudformation deploy --template-file aws-sagemaker-cost-optimization-app.yaml --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM --region us-east-2
 ```
