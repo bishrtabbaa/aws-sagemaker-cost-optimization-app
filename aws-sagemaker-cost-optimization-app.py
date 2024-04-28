@@ -52,12 +52,19 @@ logger.addHandler(csh)
 logger.setLevel(logging.INFO)
 
 # ASSUME current runtime context has appropriate networking connectivity and IAM permissions in AWS account
+def get_sagemaker_client(region=None):
 
+    if (region == None or region != ''):
+        # default
+        return boto3.client("sagemaker")
+    else:
+        return boto3.client("sagemaker", region_name=region)
+    
  # DOMAIN
-def get_sagemaker_domains():
+def get_sagemaker_domains(region=None):
 
     # boto3
-    sm = boto3.client("sagemaker")
+    sm = get_sagemaker_client(region=region)
 
     # log
     logger.debug('Getting SageMaker domains in region')
@@ -67,10 +74,10 @@ def get_sagemaker_domains():
     return smDomains
 
 # NOTEBOOK INSTANCES
-def get_sagemaker_notebook_instances():
+def get_sagemaker_notebook_instances(region=None):
 
     # boto3
-    sm = boto3.client("sagemaker")
+    sm = get_sagemaker_client(region=region)
 
     # get SageMaker Notebook Instances
     logger.debug('Getting SageMaker Notebook Instances')
@@ -90,11 +97,11 @@ def filter_active_sagemaker_notebook_instances(smNotebookInstances):
     
     return smActiveNotebookInstances
 
-def stop_sagemaker_notebook_instances(smNotebookInstances):
+def stop_sagemaker_notebook_instances(smNotebookInstances, region=None):
     nResourcesStopped = 0
 
     if (smNotebookInstances != None and len(smNotebookInstances) > 0):
-        sm = boto3.client("sagemaker")
+        sm = get_sagemaker_client(region=region)
 
         for smNotebookInstance in smNotebookInstances:
             # check !Active
@@ -108,10 +115,10 @@ def stop_sagemaker_notebook_instances(smNotebookInstances):
     return nResourcesStopped
 
 # STUDIO APPS AND NOTEBOOKS
-def get_sagemaker_studio_apps():
+def get_sagemaker_studio_apps(region=None):
 
     # boto3
-    sm = boto3.client("sagemaker")
+    sm = get_sagemaker_client(region=region)
 
     # get SageMaker Studio apps
     logger.debug('Getting SageMaker Studio Apps')
@@ -133,17 +140,14 @@ def filter_active_sagemaker_studio_apps(smStudioApps, smAppType=DEFAULT_SAGEMAKE
             if ((smAppType == DEFAULT_SAGEMAKER_APP_TYPE_ALL or smStudioApp['AppType'] == smAppType) and smStudioApp['Status'] == DEFAULT_SAGEMAKER_STATUS_TYPE_ACTIVE):
                 smActiveStudioApps.append(smStudioApp)
 
-    if (smStudioApps == None or len(smStudioApps) == 0):
-        logger.info("Could not find any active SageMaker Studio Apps")
-
     return smActiveStudioApps
 
-def stop_sagemaker_studio_apps(smStudioApps):
+def stop_sagemaker_studio_apps(smStudioApps,region=None):
 
     nResourcesStopped = 0
 
     if (smStudioApps != None and len(smStudioApps) > 0):
-        sm = boto3.client("sagemaker")
+        sm = get_sagemaker_client(region=region)
 
         logger.info("Stopping SageMaker Studio Apps")
         for smStudioApp in smStudioApps:
@@ -159,13 +163,13 @@ def stop_sagemaker_studio_apps(smStudioApps):
     return nResourcesStopped
     
 # MODEL ENDPOINTS
-def get_sagemaker_model_endpoints():
+def get_sagemaker_model_endpoints(region=None):
 
     logger.debug('Getting SageMaker Model Inference Endpoints')
 
     # boto3
 
-    sm = boto3.client("sagemaker")
+    sm = get_sagemaker_client(region=region)
 
     endpoints = sm.list_endpoints(MaxResults=DEFAULT_PAGE_SIZE)
 
@@ -181,11 +185,11 @@ def filter_active_sagemaker_model_endpoints(smModelEndpoints):
     
     return smActiveModelEndpoints
 
-def stop_sagemaker_model_endpoints(smModelEndpoints):
+def stop_sagemaker_model_endpoints(smModelEndpoints, region=None):
     nResourcesStopped = 0
     sm_model_endpoint_name = None
 
-    sm = boto3.client("sagemaker")
+    sm = get_sagemaker_client(region=region)
 
     if (smModelEndpoints != None and len(smModelEndpoints) > 0):
 
@@ -207,30 +211,32 @@ def stop_sagemaker_model_endpoints(smModelEndpoints):
     
     return nResourcesStopped
 
-def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, stopStudioApps=True, stopNotebookInstances=True, stopModelEndpoints=True):
+def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, stopStudioApps=True, stopNotebookInstances=True, stopModelEndpoints=True, region=None):
 
     nResourcesStopped = 0
 
+    logger.info("Checking for active SageMaker Resources in region: " + str(region))
+
     # StudioApps.get-filter-stop
     if (stopStudioApps == True):
-        mySageMakerStudioApps = get_sagemaker_studio_apps()
+        mySageMakerStudioApps = get_sagemaker_studio_apps(region=region)
         myActiveSageMakerStudioApps = filter_active_sagemaker_studio_apps(mySageMakerStudioApps, smStudioAppType)
         log_list(myActiveSageMakerStudioApps)
-        nResourcesStopped += stop_sagemaker_studio_apps(myActiveSageMakerStudioApps)
+        nResourcesStopped += stop_sagemaker_studio_apps(myActiveSageMakerStudioApps,region=region)
 
     # NotebookInstances.get-filter-stop
     if (stopNotebookInstances == True):
-        mySageMakerNotebookInstances = get_sagemaker_notebook_instances()
+        mySageMakerNotebookInstances = get_sagemaker_notebook_instances(region=region)
         myActiveSageMakerNotebookInstances = filter_active_sagemaker_notebook_instances(mySageMakerNotebookInstances)
         log_list(myActiveSageMakerNotebookInstances)
-        nResourcesStopped += stop_sagemaker_notebook_instances(myActiveSageMakerNotebookInstances)
+        nResourcesStopped += stop_sagemaker_notebook_instances(myActiveSageMakerNotebookInstances,region=region)
 
     # SageMakerInferenceEndpoints.get-filter-stop
     if (stopModelEndpoints == True):
-        mySageMakerModelEndpoints = get_sagemaker_model_endpoints()
+        mySageMakerModelEndpoints = get_sagemaker_model_endpoints(region=region)
         myActiveSageMakerModelEndpoints = filter_active_sagemaker_model_endpoints(mySageMakerModelEndpoints)
         log_list(myActiveSageMakerModelEndpoints)
-        nResourcesStopped += stop_sagemaker_model_endpoints(myActiveSageMakerModelEndpoints)
+        nResourcesStopped += stop_sagemaker_model_endpoints(myActiveSageMakerModelEndpoints,region=region)
 
     logger.info("Stopped SageMaker Resources: " + str(nResourcesStopped))
 
@@ -298,19 +304,23 @@ def main_handler():
 
     mySageMakerAppType = DEFAULT_SAGEMAKER_APP_TYPE_ALL
     nResourcesStopped = 0
+    myRegion = None
 
     args = sys.argv[1:]
-    for i in range(1,len(args)):
+    for i in range(0,len(args)):
         if (args[i] == "--apptype"):
             mySageMakerAppType = args[i+1]
         elif (args[i] == "--snstopic"):
             myIpamSnsTopic = args[i+1]
         elif (args[i] == "--snssubject"):
             myIpamSnsSubject = args[i+1]
+        elif (args[i] == "--region"):
+            myRegion = args[i+1]
 
-    nResourcesStopped = stop_sagemaker_resources(mySageMakerAppType,True,True,True)
+    nResourcesStopped = stop_sagemaker_resources(mySageMakerAppType,True,True,True, myRegion)
 
-    # TODO .. training, tuning, processing, and batch transform jobs ... for now ignore them
+    # TODO .. regions x profiles for more flexible env management
+    # ASSUME ... default profile has sufficient credentials for target AWS region
 
 if __name__ == '__main__':
     main_handler()
