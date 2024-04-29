@@ -54,7 +54,7 @@ logger.setLevel(logging.INFO)
 # ASSUME current runtime context has appropriate networking connectivity and IAM permissions in AWS account
 def get_sagemaker_client(region=None):
 
-    if (region == None or region != ''):
+    if (region == None or region == ''):
         # default
         return boto3.client("sagemaker")
     else:
