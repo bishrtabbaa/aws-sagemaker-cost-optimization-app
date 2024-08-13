@@ -303,8 +303,8 @@ def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, sto
     # SageMakerMlflowServers.get-filter-stop
     if (stopMlflowServers == True):
         mySageMakerMlflowServers = get_sagemaker_mlflow_servers(region=region)
-        log_list(mySageMakerMlflowServers)
         myActiveSageMakerMlflowServers = filter_active_sagemaker_mlflow_servers(mySageMakerMlflowServers)
+        log_list(myActiveSageMakerMlflowServers)
         nResourcesStopped += stop_sagemaker_mlflow_servers(myActiveSageMakerMlflowServers,region=region)
 
     logger.info("Stopped SageMaker Resources: " + str(nResourcesStopped))
