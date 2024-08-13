@@ -1,0 +1,106 @@
+Transform: 'AWS::Serverless-2016-10-31'
+
+#=========================================================
+# METADATA
+#=========================================================
+Metadata:
+  'AWS::ServerlessRepo::Application':
+    Name: AwsSagemakerCostOptimizationApp
+    Description: 'This Lambda Serverless applet stops on-demand SageMaker resources to minimize costs in development and test environments.'
+    Author: 'Bishr Tabbaa'
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels:
+      - lambda-python-layer
+    HomePageUrl: 'https://github.com/bishrtabbaa/aws-sagemaker-cost-optimization-app'
+    SemanticVersion: 2024.1.1
+    SourceCodeUrl: 'https://github.com/bishrtabbaa/aws-sagemaker-cost-optimization-app'
+
+#=========================================================
+# PARAMETERS
+#=========================================================
+Parameters:
+  LambdaFunctionName:
+    Description: '(Required) This is the name of the lambda function that will be created. This name must satisfy the pattern ^[a-z0-9-_]{1,64}$'
+    Default: AwsSagemakerCostOptimizationFunction
+    Type: String
+  LambdaLayerARN:
+    Description: '(Required) Custom Lambda Layer ARN'
+    Type: String
+  LambdaRoleARN:
+    Description: "(Optional) Custom IAM role ARN"
+    Type: String
+    Default: ""
+  LambdaEventCronSchedule:
+    Description: '(Optional) Event Cron Schedule Expression'
+    Type: String
+    Default: "cron(0 23 * * ? *)"
+  LambdaTimeout:
+    Description: '(Optional) Maximum Lambda invocation runtime in seconds. (min 1 - 900 max)'
+    Default: 900
+    Type: Number
+  LambdaMemory:
+    Description: '(Optional) Lambda memory in MB (min 128 - 3008 max).'
+    Default: 256
+    Type: Number
+Conditions:
+  NotHasLambdaRole: !Equals [!Ref LambdaRoleARN, ""]
+#=========================================================
+# RESOURCES
+#=========================================================
+Resources:
+  AwsSagemakerCostOptimizationFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      CodeUri: 
+        ./
+      Handler: "aws-sagemaker-cost-optimization-app.lambda_handler"
+      Description: "Lambda function to shutdown shutdown on-demand SageMaker resources in Dev and Sandbox environments including Notebooks, Studio Apps, and Model Endpoints."
+      Runtime: python3.12
+      Timeout: !Ref LambdaTimeout
+      MemorySize: !Ref LambdaMemory
+      Environment:
+        Variables:
+          SAGEMAKER_MODEL_ENDPOINT_STOP: True
+          SAGEMAKER_STUDIO_APP_STOP: True
+          SAGEMAKER_NOTEBOOK_INSTANCE_STOP: True
+          SAGEMAKER_MLFLOW_SERVER_STOP: True
+          SAGEMAKER_STUDIO_APP_TYPE: "*"
+      Role: !If [NotHasLambdaRole, !GetAtt AwsSageMakerCostOptimizationFunctionRole.Arn, !Ref LambdaRoleARN]
+      Layers:
+        - Ref: LambdaLayerARN
+  AwsSageMakerCostOptimizationFunctionRole:
+    Condition: NotHasLambdaRole
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+                - "sts:AssumeRole"
+  AwsSageMakerCostOptimizationEventScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Scheduled EventBridge Rule for Lambda cost optimization function
+      ScheduleExpression: !Ref LambdaEventCronSchedule
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsSagemakerCostOptimizationFunction.Arn
+          Id: AwsSageMakerCostOptimizationEventScheduleRule
+  
+  AwsSageMakerCostOptimizationEventSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AwsSageMakerCostOptimizationEventScheduleRule.Arn
+      FunctionName: !GetAtt AwsSagemakerCostOptimizationFunction.Arn

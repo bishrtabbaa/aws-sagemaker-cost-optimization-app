@@ -14,7 +14,7 @@ limitations under the License.
 
 # file: aws-sagemaker-cost-optimization-app.py
 # author: bishrt@amazon.com
-# date: 06-03-2022
+# date: 08-12-2024
 # AWS CLI reference: https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker/index.html#cli-aws-sagemaker
 # AWS Boto3 SDK reference: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html
 # Lambda Best Practices reference: https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html
@@ -25,10 +25,12 @@ limitations under the License.
 # SageMaker Cost Practices v1 https://aws.amazon.com/blogs/machine-learning/optimizing-costs-for-machine-learning-with-amazon-sagemaker/
 # SageMaker Cost Practices v2 https://aws.amazon.com/blogs/machine-learning/ensure-efficient-compute-resources-on-amazon-sagemaker/ 
 # Python reference: https://peps.python.org/pep-0008/
-# requirements Python3.6+ (3.6-3.9)
+# requirements Python3.8+ (3.8-3.12)
 # pip install --upgrade boto3
 
+######################################################################
 # IMPORTS
+######################################################################
 import boto3
 import json
 import os
@@ -37,13 +39,17 @@ import time
 import sys
 import traceback
 
+######################################################################
 # CONSTANTS
+######################################################################
 DEFAULT_PAGE_SIZE = 100
 DEFAULT_SAGEMAKER_APP_TYPE_KERNEL = "KernelGateway"
 DEFAULT_SAGEMAKER_STATUS_TYPE_ACTIVE = "InService"
 DEFAULT_SAGEMAKER_APP_TYPE_ALL = "*"
 
+######################################################################
 # LOGGER
+######################################################################
 logger = logging.getLogger()
 # logger.handler == console
 csh = logging.StreamHandler()
@@ -51,7 +57,9 @@ logger.addHandler(csh)
 # logger.level
 logger.setLevel(logging.INFO)
 
+######################################################################
 # ASSUME current runtime context has appropriate networking connectivity and IAM permissions in AWS account
+######################################################################
 def get_sagemaker_client(region=None):
 
     if (region == None or region == ''):
@@ -60,7 +68,9 @@ def get_sagemaker_client(region=None):
     else:
         return boto3.client("sagemaker", region_name=region)
     
- # DOMAIN
+######################################################################
+# DOMAIN
+######################################################################
 def get_sagemaker_domains(region=None):
 
     # boto3
@@ -72,8 +82,9 @@ def get_sagemaker_domains(region=None):
     smDomains = sm.list_domains()
 
     return smDomains
-
+#####################################################################
 # NOTEBOOK INSTANCES
+#####################################################################
 def get_sagemaker_notebook_instances(region=None):
 
     # boto3
@@ -114,7 +125,44 @@ def stop_sagemaker_notebook_instances(smNotebookInstances, region=None):
 
     return nResourcesStopped
 
+######################################################################
+# MLFLOW SERVERS
+######################################################################
+def get_sagemaker_mlflow_servers(region=None):
+
+    # boto3
+    sm = get_sagemaker_client(region=region)
+
+    # get SageMaker MLflow instances
+    logger.debug('Getting SageMaker MLflow instances')
+
+    smMlflowServers = sm.list_mlflow_tracking_servers(MaxResults=DEFAULT_PAGE_SIZE)
+
+    if (smMlflowServers != None):
+        return smMlflowServers['TrackingServerSummaries']
+    else:
+        return None
+
+def stop_sagemaker_mlflow_servers(smMlflowServers, region=None):
+    nResourcesStopped = 0
+
+    if (smMlflowServers != None and len(smMlflowServers) > 0):
+        sm = get_sagemaker_client(region=region)
+
+        for smMlflowServer in smMlflowServers:
+            # check !Active
+            if (smMlflowServer['TrackingServerStatus'] == 'Started' and smMlflowServer['IsActive'] == 'Active'):
+                logger.info("Stopping " + smMlflowServer['TrackingServerArn'])
+                response = sm.stop_mlflow_tracking_server(TrackingServerName=smMlflowServer['TrackingServerName'])
+                nResourcesStopped += 1
+    else:
+        logger.info("No active SageMaker MLflow servers to stop")
+
+    return nResourcesStopped
+
+######################################################################
 # STUDIO APPS AND NOTEBOOKS
+######################################################################
 def get_sagemaker_studio_apps(region=None):
 
     # boto3
@@ -129,6 +177,7 @@ def get_sagemaker_studio_apps(region=None):
         return smStudioAppResponse['Apps']
     else:
         return None
+    
 def filter_active_sagemaker_studio_apps(smStudioApps, smAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL):
 
     smActiveStudioApps = []
@@ -162,7 +211,9 @@ def stop_sagemaker_studio_apps(smStudioApps,region=None):
 
     return nResourcesStopped
     
+######################################################################
 # MODEL ENDPOINTS
+######################################################################
 def get_sagemaker_model_endpoints(region=None):
 
     logger.debug('Getting SageMaker Model Inference Endpoints')
@@ -211,7 +262,7 @@ def stop_sagemaker_model_endpoints(smModelEndpoints, region=None):
     
     return nResourcesStopped
 
-def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, stopStudioApps=True, stopNotebookInstances=True, stopModelEndpoints=True, region=None):
+def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, stopStudioApps=True, stopNotebookInstances=True, stopModelEndpoints=True, stopMlflowServers=True, region=None):
 
     nResourcesStopped = 0
 
@@ -238,6 +289,12 @@ def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, sto
         log_list(myActiveSageMakerModelEndpoints)
         nResourcesStopped += stop_sagemaker_model_endpoints(myActiveSageMakerModelEndpoints,region=region)
 
+    # SageMakerMlflowServers.get-filter-stop
+    if (stopMlflowServers == True):
+        mySageMakerMlflowServers = get_sagemaker_mlflow_servers(region=region)
+        log_list(mySageMakerMlflowServers)
+        nResourcesStopped += stop_sagemaker_mlflow_servers(mySageMakerMlflowServers,region=region)
+
     logger.info("Stopped SageMaker Resources: " + str(nResourcesStopped))
 
     return nResourcesStopped
@@ -247,6 +304,7 @@ def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, sto
 # SAGEMAKER_MODEL_ENDPOINT_STOP: True | False
 # SAGEMAKER_STUDIO_APP_STOP: True | False
 # SAGEMAKER_NOTEBOOK_INSTANCE_STOP: True | False
+# SAGEMAKER_MLFLOW_SERVER_STOP: True | False
 def lambda_handler(event, context):
     logger.debug('Getting OS environment variables.')
 
@@ -254,6 +312,7 @@ def lambda_handler(event, context):
     envStopSageMakerModelEndpoint = True
     envStopSageMakerStudioApp = True
     envStopSageMakerNotebookInstance = True
+    envStopSageMakerMlflowServer = True
 
     # get OS environment variables ... and check-set with good defaults
     try:
@@ -276,7 +335,12 @@ def lambda_handler(event, context):
     except KeyError:
         logger.warn('Define Lambda Environment Variable: SAGEMAKER_NOTEBOOK_INSTANCE_STOP')
 
-    nResourcesStopped = stop_sagemaker_resources(envSageMakerStudioAppType, envStopSageMakerStudioApp, envStopSageMakerNotebookInstance, envStopSageMakerModelEndpoint)
+    try:
+        envStopSageMakerMlflowServer = str2bool(os.environ['SAGEMAKER_MLFLOW_SERVER_STOP'])
+    except KeyError:
+        logger.warn('Define Lambda Environment Variable: SAGEMAKER_MLFLOW_SERVER_STOP')
+
+    nResourcesStopped = stop_sagemaker_resources(envSageMakerStudioAppType, envStopSageMakerStudioApp, envStopSageMakerNotebookInstance, envStopSageMakerModelEndpoint, envStopSageMakerMlflowServer)
 
     return {
         "statusCode": 200,
@@ -310,14 +374,10 @@ def main_handler():
     for i in range(0,len(args)):
         if (args[i] == "--apptype"):
             mySageMakerAppType = args[i+1]
-        elif (args[i] == "--snstopic"):
-            myIpamSnsTopic = args[i+1]
-        elif (args[i] == "--snssubject"):
-            myIpamSnsSubject = args[i+1]
         elif (args[i] == "--region"):
             myRegion = args[i+1]
 
-    nResourcesStopped = stop_sagemaker_resources(mySageMakerAppType,True,True,True, myRegion)
+    nResourcesStopped = stop_sagemaker_resources(mySageMakerAppType,True,True,True, True, myRegion)
 
     # TODO .. regions x profiles for more flexible env management
     # ASSUME ... default profile has sufficient credentials for target AWS region

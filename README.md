@@ -6,17 +6,17 @@ This [SageMaker Cost Optimization Solution](aws-sagemaker-cost-optimization-app.
 
 ![SageMaker Cost Optimization Solution Architecture](./assets/aws_sagemaker_cost_optimization_solution_architecture.png)
 
-### Clone Git repo
+### 1. Clone Git repo
 git clone https://github.com/bishrtabbaa/aws-sagemaker-cost-optimization-app
 
-### Use Git repo locally
+### 2. Use Git repo locally
 ```
 cd aws-sagemaker-cost-optimization-app
 
 [uses default credentials and default region in ~/.aws/credentials]
-python3 aws-sagemaker-cost-optimization-app.py 
+python aws-sagemaker-cost-optimization-app.py 
 
-bishrt@3c06302c8f5b aws-sagemaker-cost-optimization-app % python3 aws-sagemaker-cost-optimization-app.py                   
+bishrt@3c06302c8f5b aws-sagemaker-cost-optimization-app % python aws-sagemaker-cost-optimization-app.py                   
 Checking for active SageMaker Resources in region: None
 Found credentials in shared credentials file: ~/.aws/credentials
 No active SageMaker Studio apps to stop
@@ -28,18 +28,34 @@ Deleting SageMaker Model Endpoint: arn:aws:sagemaker:us-east-2:645411899653:endp
 Stopped SageMaker Resources: 2
 
 [uses default credentials in ~/.aws/credentials and user-defined region parameter]
-bishrt@3c06302c8f5b aws-sagemaker-cost-optimization-app % python3 aws-sagemaker-cost-optimization-app.py --region us-west-2
+bishrt@3c06302c8f5b aws-sagemaker-cost-optimization-app % python aws-sagemaker-cost-optimization-app.py --region us-west-2
 Checking for active SageMaker Resources in region: us-west-2
 Found credentials in shared credentials file: ~/.aws/credentials
 No active SageMaker Studio apps to stop
 No active SageMaker Notebook instances to stop
 No active SageMaker Model Endpoints to stop
+No active SageMaker MLflow Servers to stop
 Stopped SageMaker Resources: 0
 ```
 
-### Deploy Serverless app to AWS as CloudFormation stack
+### 3. Deploy Serverless app to AWS as SAM CloudFormation stack
 
-The default parameter values of the CloudFormation stack will result in stopping SageMaker Apps, Notebooks, and Endpoints on a weekly basis which is the common case to prevent cost overruns.  You can change the Lambda function configuration at deployment time and also once the stack has been deployed.
+#### 3.1 Build and Package Lambda Layer with latest boto3
+
 ```
-aws cloudformation deploy --template-file aws-sagemaker-cost-optimization-app.yaml --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM --region us-east-2
+mkdir python
+cd python
+pip3 install boto3 -t .
+cd ..
+zip -r my-aws-lambda-python-boto3-layer.zip python
+aws lambda publish-layer-version --region us-east-1 --layer-name my-aws-lambda-python-boto3-layer --zip-file fileb://my-aws-lambda-python-boto3-layer.zip
+aws lambda list-layers
+```
+
+#### 3.2 Build and Package Lambda Function
+
+The default parameter values of the CloudFormation stack will result in stopping SageMaker Apps, Notebooks, MLflow Servers, and Endpoints on a weekly basis which is the common case to prevent cost overruns.  You can change the Lambda function configuration at deployment time and also once the stack has been deployed.
+
+```
+aws cloudformation deploy --template-file aws-sagemaker-cost-optimization-app.yaml --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM --region us-east-1
 ```
