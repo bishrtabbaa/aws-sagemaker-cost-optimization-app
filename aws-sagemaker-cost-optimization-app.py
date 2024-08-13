@@ -143,6 +143,17 @@ def get_sagemaker_mlflow_servers(region=None):
     else:
         return None
 
+def filter_active_sagemaker_mlflow_servers(smMlflowServers):
+
+    smActiveMlflowServers = []
+
+    if (smMlflowServers != None):
+        for smMlflowServer in smMlflowServers:
+            if (smMlflowServer['TrackingServerStatus'] == 'Started' and smMlflowServer['IsActive'] == 'Active'):
+                smActiveMlflowServers.append(smMlflowServer)
+    
+    return smActiveMlflowServers
+
 def stop_sagemaker_mlflow_servers(smMlflowServers, region=None):
     nResourcesStopped = 0
 
@@ -151,7 +162,7 @@ def stop_sagemaker_mlflow_servers(smMlflowServers, region=None):
 
         for smMlflowServer in smMlflowServers:
             # check !Active
-            if (smMlflowServer['TrackingServerStatus'] == 'Started' and smMlflowServer['IsActive'] == 'Active'):
+            if (smMlflowServer['IsActive'] == 'Active'):
                 logger.info("Stopping " + smMlflowServer['TrackingServerArn'])
                 response = sm.stop_mlflow_tracking_server(TrackingServerName=smMlflowServer['TrackingServerName'])
                 nResourcesStopped += 1
@@ -293,7 +304,8 @@ def stop_sagemaker_resources(smStudioAppType=DEFAULT_SAGEMAKER_APP_TYPE_ALL, sto
     if (stopMlflowServers == True):
         mySageMakerMlflowServers = get_sagemaker_mlflow_servers(region=region)
         log_list(mySageMakerMlflowServers)
-        nResourcesStopped += stop_sagemaker_mlflow_servers(mySageMakerMlflowServers,region=region)
+        myActiveSageMakerMlflowServers = filter_active_sagemaker_mlflow_servers(mySageMakerMlflowServers)
+        nResourcesStopped += stop_sagemaker_mlflow_servers(myActiveSageMakerMlflowServers,region=region)
 
     logger.info("Stopped SageMaker Resources: " + str(nResourcesStopped))
 
