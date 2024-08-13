@@ -1,6 +1,6 @@
 """
 You must have an AWS account to use this Python code.
-© 2022, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+© 2024, Amazon Web Services, Inc. or its affiliates. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -149,7 +149,7 @@ def filter_active_sagemaker_mlflow_servers(smMlflowServers):
 
     if (smMlflowServers != None):
         for smMlflowServer in smMlflowServers:
-            if (smMlflowServer['TrackingServerStatus'] == 'Started' and smMlflowServer['IsActive'] == 'Active'):
+            if (smMlflowServer['IsActive'] == 'Active'):
                 smActiveMlflowServers.append(smMlflowServer)
     
     return smActiveMlflowServers
