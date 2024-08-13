@@ -2,7 +2,7 @@
 
 ## :brain: Amazon SageMaker Cost Optimization App Overview
 
-This [SageMaker Cost Optimization Solution](aws-sagemaker-cost-optimization-app.py) solution streamlines the stopping of on-demand SageMaker resources such as Jupyter Notebooks, Studio apps (e.g. Data Wrangler Flows and Studio Notebooks), and Inference Model Endpoints and enforces best practices through automation.  The solution consists of a set of Python functions that can be run in CLI mode, referenced as part of a larger program or run as a standalone/scheduled Lambda function.  It is intended to be run in Development and Sandbox AWS environments where On-Demand resources should be stopped when they are not used.
+This [SageMaker Cost Optimization Solution](aws-sagemaker-cost-optimization-app.py) solution streamlines the stopping of on-demand SageMaker resources such as Jupyter Notebooks, Studio apps (e.g. Data Wrangler Flows and Studio Notebooks), MLflow Tracking Servers and Inference Model Endpoints and enforces best practices through automation.  The solution consists of a set of Python functions that can be run in CLI mode, referenced as part of a larger program or run as a standalone/scheduled Lambda function.  It is intended to be run in Development and Sandbox AWS environments where On-Demand resources should be stopped when they are not used.
 
 ![SageMaker Cost Optimization Solution Architecture](./assets/aws_sagemaker_cost_optimization_solution_architecture.png)
 
@@ -25,6 +25,7 @@ Stopping arn:aws:sagemaker:us-east-2:645411899653:notebook-instance/MySageMakerW
 {'EndpointName': 'DEMO-endpoint-2024-04-28-16-48-56', 'EndpointArn': 'arn:aws:sagemaker:us-east-2:645411899653:endpoint/DEMO-endpoint-2024-04-28-16-48-56', 'CreationTime': datetime.datetime(2024, 4, 28, 11, 48, 57, 382000, tzinfo=tzlocal()), 'LastModifiedTime': datetime.datetime(2024, 4, 28, 11, 52, 3, 387000, tzinfo=tzlocal()), 'EndpointStatus': 'InService'}
 Stopping SageMaker Model Endpoints
 Deleting SageMaker Model Endpoint: arn:aws:sagemaker:us-east-2:645411899653:endpoint/DEMO-endpoint-2024-04-28-16-48-56
+No active SageMaker Mlflow Servers to stop
 Stopped SageMaker Resources: 2
 
 [uses default credentials in ~/.aws/credentials and user-defined region parameter]
@@ -40,7 +41,7 @@ Stopped SageMaker Resources: 0
 
 ### 3. Deploy Serverless app to AWS as SAM CloudFormation stack
 
-#### 3.1 Build and Package Lambda Layer with latest boto3
+#### 3.1 Build and Deploy Lambda Layer with latest boto3
 
 ```
 mkdir python
@@ -49,13 +50,44 @@ pip3 install boto3 -t .
 cd ..
 zip -r my-aws-lambda-python-boto3-layer.zip python
 aws lambda publish-layer-version --region us-east-1 --layer-name my-aws-lambda-python-boto3-layer --zip-file fileb://my-aws-lambda-python-boto3-layer.zip
-aws lambda list-layers
+aws lambda list-layers --region us-east-1
 ```
 
-#### 3.2 Build and Package Lambda Function
+#### 3.2 Build and Deploy Lambda Function
 
 The default parameter values of the CloudFormation stack will result in stopping SageMaker Apps, Notebooks, MLflow Servers, and Endpoints on a weekly basis which is the common case to prevent cost overruns.  You can change the Lambda function configuration at deployment time and also once the stack has been deployed.
 
+Note that the Lambda Layer ARN must include the layer version.
+
 ```
+sam validate --region us-east-1
 aws cloudformation deploy --template-file aws-sagemaker-cost-optimization-app.yaml --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM --region us-east-1
+sam deploy --guided --region us-east-1 --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM
+
+Configuring SAM deploy
+======================
+
+Looking for config file [samconfig.toml] :  Found
+Reading default arguments  :  Success
+
+Setting default arguments for 'sam deploy'
+=========================================
+Stack Name [AwsSageMakerCostOptimizationAppStack]: AwsSageMakerCostOptimizationAppStack
+AWS Region [us-east-1]: us-east-1
+Parameter LambdaFunctionName [AwsSagemakerCostOptimizationFunction]: AwsSageMakerCostOptimizationFunction
+Parameter LambdaLayerARN []: arn:aws:lambda:us-east-1:267680945830:layer:my-aws-lambda-python-boto3-layer:1
+Parameter LambdaRoleARN []:
+Parameter LambdaEventCronSchedule [cron(0 23 * * ? *)]:
+Parameter LambdaTimeout [900]:
+Parameter LambdaMemory [256]:
+#Shows you resources changes to be deployed and require a 'Y' to initiate deploy
+Confirm changes before deploy [Y/n]: Y
+#SAM needs permission to be able to create roles to connect to the resources in your template
+Allow SAM CLI IAM role creation [Y/n]: Y
+#Preserves the state of previously provisioned resources when an operation fails
+Disable rollback [Y/n]: Y
+Save arguments to configuration file [Y/n]: Y
+SAM configuration file [samconfig.toml]:
+SAM configuration environment [default]:
+
 ```
