@@ -6,6 +6,8 @@ This [SageMaker Cost Optimization Solution](aws-sagemaker-cost-optimization-app.
 
 ![SageMaker Cost Optimization Solution Architecture](./assets/aws_sagemaker_cost_optimization_solution_architecture.png)
 
+Please visit the accompanying [TowardsAws blog post](https://towardsaws.com/frugal-mlops-automation-how-to-enforce-amazon-sagemaker-cost-optimization-using-serverless-c8c87c626002) for further context.
+
 ### 1. Clone Git repo
 git clone https://github.com/bishrtabbaa/aws-sagemaker-cost-optimization-app
 
