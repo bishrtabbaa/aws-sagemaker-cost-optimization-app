@@ -51,7 +51,6 @@ Note that the Lambda Layer ARN must include the layer version.
 
 ```
 sam validate --region us-east-1
-aws cloudformation deploy --template-file aws-sagemaker-cost-optimization-app.yaml --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM --region us-east-1
 sam deploy --guided --region us-east-1 --stack-name AwsSageMakerCostOptimizationAppStack --capabilities CAPABILITY_NAMED_IAM
 
 Configuring SAM deploy
