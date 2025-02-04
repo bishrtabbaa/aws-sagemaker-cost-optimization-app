@@ -213,8 +213,8 @@ def stop_sagemaker_studio_apps(smStudioApps,region=None):
         for smStudioApp in smStudioApps:
             # check !Active
             if (smStudioApp['Status'] == DEFAULT_SAGEMAKER_STATUS_TYPE_ACTIVE):
-                logger.info("Stopping " + smStudioApp['UserProfileName'] + '.' + smStudioApp['AppName'])
-                response = sm.delete_app(DomainId=smStudioApp['DomainId'], UserProfileName=smStudioApp['UserProfileName'], AppType=smStudioApp['AppType'], AppName=smStudioApp['AppName'])
+                logger.info("Stopping " + smStudioApp['SpaceName'] + '.' + smStudioApp['AppName'])
+                response = sm.delete_app(DomainId=smStudioApp['DomainId'], SpaceName=smStudioApp['SpaceName'], AppType=smStudioApp['AppType'], AppName=smStudioApp['AppName'])
                 nResourcesStopped += 1
             # else ignore
     else:

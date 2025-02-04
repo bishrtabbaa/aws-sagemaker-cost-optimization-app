@@ -43,19 +43,7 @@ Stopped SageMaker Resources: 0
 
 ### 3. Deploy Serverless app to AWS as SAM CloudFormation stack
 
-#### 3.1 Build and Deploy Lambda Layer with latest boto3
-
-```
-mkdir python
-cd python
-pip3 install boto3 -t .
-cd ..
-zip -r my-aws-lambda-python-boto3-layer.zip python
-aws lambda publish-layer-version --region us-east-1 --layer-name my-aws-lambda-python-boto3-layer --zip-file fileb://my-aws-lambda-python-boto3-layer.zip
-aws lambda list-layers --region us-east-1
-```
-
-#### 3.2 Build and Deploy Lambda Function
+#### 3.1 Build and Deploy Lambda Function
 
 The default parameter values of the CloudFormation stack will result in stopping SageMaker Apps, Notebooks, MLflow Servers, and Endpoints on a weekly basis which is the common case to prevent cost overruns.  You can change the Lambda function configuration at deployment time and also once the stack has been deployed.
 
@@ -77,7 +65,6 @@ Setting default arguments for 'sam deploy'
 Stack Name [AwsSageMakerCostOptimizationAppStack]: AwsSageMakerCostOptimizationAppStack
 AWS Region [us-east-1]: us-east-1
 Parameter LambdaFunctionName [AwsSagemakerCostOptimizationFunction]: AwsSageMakerCostOptimizationFunction
-Parameter LambdaLayerARN []: arn:aws:lambda:us-east-1:267680945830:layer:my-aws-lambda-python-boto3-layer:1
 Parameter LambdaRoleARN []:
 Parameter LambdaEventCronSchedule [cron(0 23 * * ? *)]:
 Parameter LambdaTimeout [900]:
